@@ -357,6 +357,7 @@ struct pp_display_clock_request {
 
 struct amd_powerplay_funcs {
 	int (*get_temperature)(void *handle);
+	int (*get_hbm_temperature)(void *handle);
 	int (*load_firmware)(void *handle);
 	int (*wait_for_fw_loading_complete)(void *handle);
 	int (*force_performance_level)(void *handle, enum amd_dpm_forced_level level);
