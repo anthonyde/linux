@@ -260,6 +260,7 @@ struct amd_pm_funcs {
 				bool  *equal);
 /* export for sysfs */
 	int (*get_temperature)(void *handle);
+	int (*get_hbm_temperature)(void *handle);
 	void (*set_fan_control_mode)(void *handle, u32 mode);
 	u32 (*get_fan_control_mode)(void *handle);
 	int (*set_fan_speed_percent)(void *handle, u32 speed);
