@@ -1597,6 +1597,11 @@ static int amdgpu_debugfs_pm_info_pp(struct seq_file *m, struct amdgpu_device *a
 		seq_printf(m, "GPU Load: %u %%\n", value);
 	seq_printf(m, "\n");
 
+	/* HBM Temp */
+	if (!amdgpu_dpm_read_sensor(adev, AMDGPU_PP_SENSOR_HBM_TEMP, (void *)&value, &size))
+		seq_printf(m, "HBM Temperature: %u C\n", value/1000);
+	seq_printf(m, "\n");
+
 	/* UVD clocks */
 	if (!amdgpu_dpm_read_sensor(adev, AMDGPU_PP_SENSOR_UVD_POWER, (void *)&value, &size)) {
 		if (!value) {
