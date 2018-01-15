@@ -1521,6 +1521,9 @@ struct amdgpu_device {
 	struct amd_powerplay		powerplay;
 	bool				pp_enabled;
 	bool				pp_force_state_enabled;
+#if defined(CONFIG_DEBUG_FS)
+	struct dentry			*debugfs_pp_mutex;
+#endif
 
 	/* dpm */
 	struct amdgpu_pm		pm;

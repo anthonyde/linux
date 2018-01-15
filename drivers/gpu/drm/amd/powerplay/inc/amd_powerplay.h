@@ -439,6 +439,10 @@ int amd_powerplay_display_clock_voltage_request(void *handle,
 int amd_powerplay_get_display_mode_validation_clocks(void *handle,
 		struct amd_pp_simple_clock_info *output);
 
+int amd_powerplay_mutex_lock(void *handle);
+
+int amd_powerplay_mutex_unlock(void *handle);
+
 int amd_set_clockgating_by_smu(void *handle, uint32_t msg_id);
 
 #endif /* _AMD_POWERPLAY_H_ */
