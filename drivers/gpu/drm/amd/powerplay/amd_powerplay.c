@@ -1465,3 +1465,33 @@ int amd_powerplay_get_display_mode_validation_clocks(void *handle,
 	return ret;
 }
 
+int amd_powerplay_mutex_lock(void *handle)
+{
+	struct pp_instance *pp_handle = (struct pp_instance *)handle;
+	int ret = 0;
+
+	ret = pp_check(pp_handle);
+
+	if (ret != 0)
+		return ret;
+
+	mutex_lock(&pp_handle->pp_lock);
+
+	return 0;
+}
+
+int amd_powerplay_mutex_unlock(void *handle)
+{
+	struct pp_instance *pp_handle = (struct pp_instance *)handle;
+	int ret = 0;
+
+	ret = pp_check(pp_handle);
+
+	if (ret != 0)
+		return ret;
+
+	mutex_unlock(&pp_handle->pp_lock);
+
+	return 0;
+}
+
