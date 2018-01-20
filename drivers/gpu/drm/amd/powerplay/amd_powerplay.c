@@ -1169,6 +1169,24 @@ static int pp_dpm_switch_power_profile(void *handle,
 	return 0;
 }
 
+static int pp_odn_edit_dpm_table(void *handle, uint32_t type, long *input, uint32_t size)
+{
+	struct pp_hwmgr *hwmgr;
+	struct pp_instance *pp_handle = (struct pp_instance *)handle;
+
+	if (pp_check(pp_handle))
+		return -EINVAL;
+
+	hwmgr = pp_handle->hwmgr;
+
+	if (hwmgr->hwmgr_func->odn_edit_dpm_table == NULL) {
+		pr_info("%s was not implemented.\n", __func__);
+		return -EINVAL;
+	}
+
+	return hwmgr->hwmgr_func->odn_edit_dpm_table(hwmgr, type, input, size);
+}
+
 const struct amd_pm_funcs pp_dpm_funcs = {
 	.get_temperature = pp_dpm_get_temperature,
 	.get_hbm_temperature = pp_dpm_get_hbm_temperature,
@@ -1203,6 +1221,7 @@ const struct amd_pm_funcs pp_dpm_funcs = {
 	.set_power_profile_state = pp_dpm_set_power_profile_state,
 	.switch_power_profile = pp_dpm_switch_power_profile,
 	.set_clockgating_by_smu = pp_set_clockgating_by_smu,
+	.odn_edit_dpm_table = pp_odn_edit_dpm_table,
 };
 
 int amd_powerplay_reset(void *handle)

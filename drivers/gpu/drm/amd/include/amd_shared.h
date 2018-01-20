@@ -132,6 +132,8 @@ enum pp_clock_type {
 	PP_SCLK,
 	PP_MCLK,
 	PP_PCIE,
+	OD_SCLK,
+	OD_MCLK,
 };
 
 /* CG flags */
@@ -296,6 +298,7 @@ struct amd_pm_funcs {
 			struct amd_pp_profile *request);
 	int (*switch_power_profile)(void *handle,
 			enum amd_pp_profile_type type);
+	int (*odn_edit_dpm_table)(void *handle, uint32_t type, long *input, uint32_t size);
 /* export to amdgpu */
 	void (*powergate_uvd)(void *handle, bool gate);
 	void (*powergate_vce)(void *handle, bool gate);
