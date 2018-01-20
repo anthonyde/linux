@@ -379,6 +379,9 @@ struct pp_hwmgr_func {
 			struct amd_pp_profile *request);
 	int (*avfs_control)(struct pp_hwmgr *hwmgr, bool enable);
 	int (*disable_smc_firmware_ctf)(struct pp_hwmgr *hwmgr);
+	int (*odn_edit_dpm_table)(struct pp_hwmgr *hwmgr,
+					enum PP_OD_DPM_TABLE_COMMAND type,
+					long *input, uint32_t size);
 };
 
 struct pp_table_func {
