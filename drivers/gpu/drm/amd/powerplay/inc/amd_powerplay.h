@@ -307,6 +307,8 @@ enum pp_clock_type {
 	PP_SCLK,
 	PP_MCLK,
 	PP_PCIE,
+	OD_SCLK,
+	OD_MCLK,
 };
 
 struct pp_states_info {
@@ -401,6 +403,7 @@ struct amd_powerplay_funcs {
 			struct amd_pp_profile *request);
 	int (*switch_power_profile)(void *handle,
 			enum amd_pp_profile_type type);
+	int (*odn_edit_dpm_table)(void *handle, uint32_t type, long *input, uint32_t size);
 };
 
 struct amd_powerplay {
