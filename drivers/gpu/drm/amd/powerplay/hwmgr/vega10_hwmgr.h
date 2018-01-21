@@ -326,6 +326,7 @@ struct vega10_hwmgr {
 	struct vega10_bacos                bacos;
 
 	struct vega10_odn_dpm_table       odn_dpm_table;
+	struct vega10_odn_dpm_table       golden_odn_dpm_table;
 	struct vega10_odn_fan_table       odn_fan_table;
 
 	/* ---- General data ---- */
