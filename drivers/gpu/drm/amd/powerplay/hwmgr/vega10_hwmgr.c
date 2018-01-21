@@ -4612,6 +4612,9 @@ static int vega10_print_clock_levels(struct pp_hwmgr *hwmgr,
 	struct vega10_single_dpm_table *sclk_table = &(data->dpm_table.gfx_table);
 	struct vega10_single_dpm_table *mclk_table = &(data->dpm_table.mem_table);
 	struct vega10_pcie_table *pcie_table = &(data->dpm_table.pcie_table);
+	struct vega10_odn_dpm_table *odn_table = &(data->odn_dpm_table);
+	struct phm_odn_clock_levels *odn_sclk_table = &(odn_table->odn_core_clock_dpm_levels);
+	struct phm_odn_clock_levels *odn_mclk_table = &(odn_table->odn_memory_clock_dpm_levels);
 	int i, now, size = 0;
 
 	switch (type) {
@@ -4667,6 +4670,20 @@ static int vega10_print_clock_levels(struct pp_hwmgr *hwmgr,
 					(pcie_table->pcie_gen[i] == 1) ? "5.0GB, x16" :
 					(pcie_table->pcie_gen[i] == 2) ? "8.0GB, x16" : "",
 					(i == now) ? "*" : "");
+		break;
+	case OD_SCLK:
+		size = sprintf(buf, "%s: \n", "OD_SCLK");
+		for (i = 0; i < odn_sclk_table->number_of_performance_levels; i++)
+			size += sprintf(buf + size, "%d: %10uMhz %10u mV\n",
+				i, odn_sclk_table->performance_level_entries[i].clock / 100,
+				odn_sclk_table->performance_level_entries[i].vddc);
+		break;
+	case OD_MCLK:
+		size = sprintf(buf, "%s: \n", "OD_MCLK");
+		for (i = 0; i < odn_mclk_table->number_of_performance_levels; i++)
+			size += sprintf(buf + size, "%d: %10uMhz %10u mV\n",
+				i, odn_mclk_table->performance_level_entries[i].clock / 100,
+				odn_mclk_table->performance_level_entries[i].vddc);
 		break;
 	default:
 		break;
