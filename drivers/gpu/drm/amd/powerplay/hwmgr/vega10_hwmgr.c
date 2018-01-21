@@ -294,6 +294,11 @@ static int vega10_set_features_platform_caps(struct pp_hwmgr *hwmgr)
 	phm_cap_set(hwmgr->platform_descriptor.platformCaps,
 			PHM_PlatformCaps_VCEDPM);
 
+	phm_cap_set(hwmgr->platform_descriptor.platformCaps,
+			PHM_PlatformCaps_ODNinACSupport);
+	phm_cap_set(hwmgr->platform_descriptor.platformCaps,
+			PHM_PlatformCaps_ODNinDCSupport);
+
 	return 0;
 }
 
