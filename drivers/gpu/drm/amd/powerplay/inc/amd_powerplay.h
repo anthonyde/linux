@@ -48,6 +48,7 @@ enum amd_pp_sensors {
 	AMDGPU_PP_SENSOR_VCE_POWER,
 	AMDGPU_PP_SENSOR_UVD_POWER,
 	AMDGPU_PP_SENSOR_GPU_POWER,
+	AMDGPU_PP_SENSOR_HBM_TEMP,
 };
 
 enum amd_pp_event {
@@ -295,10 +296,19 @@ enum {
 	PP_GROUP_MAX
 };
 
+enum PP_OD_DPM_TABLE_COMMAND {
+	PP_OD_EDIT_SCLK_VDDC_TABLE,
+	PP_OD_EDIT_MCLK_VDDC_TABLE,
+	PP_OD_RESTORE_DEFAULT_TABLE,
+	PP_OD_COMMIT_DPM_TABLE
+};
+
 enum pp_clock_type {
 	PP_SCLK,
 	PP_MCLK,
 	PP_PCIE,
+	OD_SCLK,
+	OD_MCLK,
 };
 
 struct pp_states_info {
@@ -357,6 +367,7 @@ struct pp_display_clock_request {
 
 struct amd_powerplay_funcs {
 	int (*get_temperature)(void *handle);
+	int (*get_hbm_temperature)(void *handle);
 	int (*load_firmware)(void *handle);
 	int (*wait_for_fw_loading_complete)(void *handle);
 	int (*force_performance_level)(void *handle, enum amd_dpm_forced_level level);
@@ -392,6 +403,7 @@ struct amd_powerplay_funcs {
 			struct amd_pp_profile *request);
 	int (*switch_power_profile)(void *handle,
 			enum amd_pp_profile_type type);
+	int (*odn_edit_dpm_table)(void *handle, uint32_t type, long *input, uint32_t size);
 };
 
 struct amd_powerplay {
@@ -436,6 +448,10 @@ int amd_powerplay_display_clock_voltage_request(void *handle,
 
 int amd_powerplay_get_display_mode_validation_clocks(void *handle,
 		struct amd_pp_simple_clock_info *output);
+
+int amd_powerplay_mutex_lock(void *handle);
+
+int amd_powerplay_mutex_unlock(void *handle);
 
 int amd_set_clockgating_by_smu(void *handle, uint32_t msg_id);
 

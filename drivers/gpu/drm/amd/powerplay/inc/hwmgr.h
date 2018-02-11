@@ -326,6 +326,7 @@ struct pp_hwmgr_func {
 	int (*set_max_fan_rpm_output)(struct pp_hwmgr *hwmgr, uint16_t us_max_fan_pwm);
 	int (*set_max_fan_pwm_output)(struct pp_hwmgr *hwmgr, uint16_t us_max_fan_pwm);
 	int (*get_temperature)(struct pp_hwmgr *hwmgr);
+	int (*get_hbm_temperature)(struct pp_hwmgr *hwmgr);
 	int (*stop_thermal_controller)(struct pp_hwmgr *hwmgr);
 	int (*get_fan_speed_info)(struct pp_hwmgr *hwmgr, struct phm_fan_speed_info *fan_speed_info);
 	int (*set_fan_control_mode)(struct pp_hwmgr *hwmgr, uint32_t mode);
@@ -378,6 +379,9 @@ struct pp_hwmgr_func {
 			struct amd_pp_profile *request);
 	int (*avfs_control)(struct pp_hwmgr *hwmgr, bool enable);
 	int (*disable_smc_firmware_ctf)(struct pp_hwmgr *hwmgr);
+	int (*odn_edit_dpm_table)(struct pp_hwmgr *hwmgr,
+					enum PP_OD_DPM_TABLE_COMMAND type,
+					long *input, uint32_t size);
 };
 
 struct pp_table_func {

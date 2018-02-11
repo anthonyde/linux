@@ -388,6 +388,25 @@ int vega10_thermal_get_temperature(struct pp_hwmgr *hwmgr)
 	return temp;
 }
 
+int vega10_thermal_get_hbm_temperature(struct pp_hwmgr *hwmgr)
+{
+	int temp;
+	uint32_t val;
+
+	PP_ASSERT_WITH_CODE(!smum_send_msg_to_smc(hwmgr->smumgr,
+			PPSMC_MSG_GetTemperatureHBM),
+			"Attempt to get HBM temperature from SMC Failed!",
+			return 0);
+	PP_ASSERT_WITH_CODE(!vega10_read_arg_from_smc(hwmgr->smumgr, &val),
+			"Attempt to read HBM temperature from SMC Failed!",
+			return 0);
+
+	temp = val & 0x1ff;
+	temp *= PP_TEMPERATURE_UNITS_PER_CENTIGRADES;
+
+	return temp;
+}
+
 /**
 * Set the requested temperature range for high and low alert signals
 *

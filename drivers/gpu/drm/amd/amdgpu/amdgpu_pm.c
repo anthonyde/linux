@@ -374,6 +374,89 @@ static ssize_t amdgpu_set_pp_table(struct device *dev,
 	return count;
 }
 
+static ssize_t amdgpu_set_pp_od_clk_voltage(struct device *dev,
+		struct device_attribute *attr,
+		const char *buf,
+		size_t count)
+{
+	struct drm_device *ddev = dev_get_drvdata(dev);
+	struct amdgpu_device *adev = ddev->dev_private;
+	int ret;
+	uint32_t parameter_size = 0;
+	long parameter[64];
+	char buf_cpy[128];
+	char *tmp_str;
+	char *sub_str;
+	const char delimiter[3] = {' ', '\n', '\0'};
+	uint32_t type;
+
+	if (count > 127)
+		return -EINVAL;
+
+	if (*buf == 's')
+		type = PP_OD_EDIT_SCLK_VDDC_TABLE;
+	else if (*buf == 'm')
+		type = PP_OD_EDIT_MCLK_VDDC_TABLE;
+	else if(*buf == 'r')
+		type = PP_OD_RESTORE_DEFAULT_TABLE;
+	else if (*buf == 'c')
+		type = PP_OD_COMMIT_DPM_TABLE;
+	else
+		return -EINVAL;
+
+	memcpy(buf_cpy, buf, count+1);
+
+	tmp_str = buf_cpy;
+
+	while (isspace(*++tmp_str));
+
+	while (tmp_str[0]) {
+		sub_str = strsep(&tmp_str, delimiter);
+		ret = kstrtol(sub_str, 0, &parameter[parameter_size]);
+		if (ret)
+			return -EINVAL;
+		parameter_size++;
+
+		while (isspace(*tmp_str))
+			tmp_str++;
+	}
+
+	if (adev->powerplay.pp_funcs->odn_edit_dpm_table)
+		ret = amdgpu_dpm_odn_edit_dpm_table(adev, type,
+						parameter, parameter_size);
+
+	if (ret)
+		return -EINVAL;
+
+	if (type == PP_OD_COMMIT_DPM_TABLE) {
+		if (adev->powerplay.pp_funcs->dispatch_tasks) {
+			amdgpu_dpm_dispatch_task(adev, AMD_PP_EVENT_READJUST_POWER_STATE, NULL, NULL);
+			return count;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	return count;
+}
+
+static ssize_t amdgpu_get_pp_od_clk_voltage(struct device *dev,
+		struct device_attribute *attr,
+		char *buf)
+{
+	struct drm_device *ddev = dev_get_drvdata(dev);
+	struct amdgpu_device *adev = ddev->dev_private;
+	uint32_t size = 0;
+
+	if (adev->powerplay.pp_funcs->print_clock_levels) {
+		size = amdgpu_dpm_print_clock_levels(adev, OD_SCLK, buf);
+		size += amdgpu_dpm_print_clock_levels(adev, OD_MCLK, buf+size);
+		return size;
+	} else {
+		return snprintf(buf, PAGE_SIZE, "\n");
+	}
+}
+
 static ssize_t amdgpu_get_pp_dpm_sclk(struct device *dev,
 		struct device_attribute *attr,
 		char *buf)
@@ -817,6 +900,9 @@ static DEVICE_ATTR(pp_gfx_power_profile, S_IRUGO | S_IWUSR,
 static DEVICE_ATTR(pp_compute_power_profile, S_IRUGO | S_IWUSR,
 		amdgpu_get_pp_compute_power_profile,
 		amdgpu_set_pp_compute_power_profile);
+static DEVICE_ATTR(pp_od_clk_voltage, S_IRUGO | S_IWUSR,
+		amdgpu_get_pp_od_clk_voltage,
+		amdgpu_set_pp_od_clk_voltage);
 
 static ssize_t amdgpu_hwmon_show_temp(struct device *dev,
 				      struct device_attribute *attr,
@@ -835,6 +921,28 @@ static ssize_t amdgpu_hwmon_show_temp(struct device *dev,
 		temp = 0;
 	else
 		temp = amdgpu_dpm_get_temperature(adev);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", temp);
+}
+
+static ssize_t amdgpu_hwmon_show_hbm_temp(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
+{
+	struct amdgpu_device *adev = dev_get_drvdata(dev);
+	struct drm_device *ddev = adev->ddev;
+	int temp;
+
+	/* Can't get temperature when the card is off */
+	if  ((adev->flags & AMD_IS_PX) &&
+	     (ddev->switch_power_state != DRM_SWITCH_POWER_ON))
+		return -EINVAL;
+
+	if (!adev->pp_enabled || !adev->powerplay.pp_funcs->get_hbm_temperature)
+		temp = 0;
+	else
+		temp = adev->powerplay.pp_funcs->get_hbm_temperature(
+				adev->powerplay.pp_handle);
 
 	return snprintf(buf, PAGE_SIZE, "%d\n", temp);
 }
@@ -961,6 +1069,7 @@ static ssize_t amdgpu_hwmon_get_fan1_input(struct device *dev,
 static SENSOR_DEVICE_ATTR(temp1_input, S_IRUGO, amdgpu_hwmon_show_temp, NULL, 0);
 static SENSOR_DEVICE_ATTR(temp1_crit, S_IRUGO, amdgpu_hwmon_show_temp_thresh, NULL, 0);
 static SENSOR_DEVICE_ATTR(temp1_crit_hyst, S_IRUGO, amdgpu_hwmon_show_temp_thresh, NULL, 1);
+static SENSOR_DEVICE_ATTR(temp2_input, S_IRUGO, amdgpu_hwmon_show_hbm_temp, NULL, 0);
 static SENSOR_DEVICE_ATTR(pwm1, S_IRUGO | S_IWUSR, amdgpu_hwmon_get_pwm1, amdgpu_hwmon_set_pwm1, 0);
 static SENSOR_DEVICE_ATTR(pwm1_enable, S_IRUGO | S_IWUSR, amdgpu_hwmon_get_pwm1_enable, amdgpu_hwmon_set_pwm1_enable, 0);
 static SENSOR_DEVICE_ATTR(pwm1_min, S_IRUGO, amdgpu_hwmon_get_pwm1_min, NULL, 0);
@@ -971,6 +1080,7 @@ static struct attribute *hwmon_attributes[] = {
 	&sensor_dev_attr_temp1_input.dev_attr.attr,
 	&sensor_dev_attr_temp1_crit.dev_attr.attr,
 	&sensor_dev_attr_temp1_crit_hyst.dev_attr.attr,
+	&sensor_dev_attr_temp2_input.dev_attr.attr,
 	&sensor_dev_attr_pwm1.dev_attr.attr,
 	&sensor_dev_attr_pwm1_enable.dev_attr.attr,
 	&sensor_dev_attr_pwm1_min.dev_attr.attr,
@@ -1441,7 +1551,13 @@ int amdgpu_pm_sysfs_init(struct amdgpu_device *adev)
 				"pp_compute_power_profile\n");
 		return ret;
 	}
-
+	ret = device_create_file(adev->dev,
+			&dev_attr_pp_od_clk_voltage);
+	if (ret) {
+		DRM_ERROR("failed to create device file "
+				"pp_od_clk_voltage\n");
+		return ret;
+	}
 	ret = amdgpu_debugfs_pm_init(adev);
 	if (ret) {
 		DRM_ERROR("Failed to register debugfs file for dpm!\n");
@@ -1474,6 +1590,8 @@ void amdgpu_pm_sysfs_fini(struct amdgpu_device *adev)
 			&dev_attr_pp_gfx_power_profile);
 	device_remove_file(adev->dev,
 			&dev_attr_pp_compute_power_profile);
+	device_remove_file(adev->dev,
+			&dev_attr_pp_od_clk_voltage);
 }
 
 void amdgpu_pm_compute_clocks(struct amdgpu_device *adev)
@@ -1571,6 +1689,11 @@ static int amdgpu_debugfs_pm_info_pp(struct seq_file *m, struct amdgpu_device *a
 	/* GPU Load */
 	if (!amdgpu_dpm_read_sensor(adev, AMDGPU_PP_SENSOR_GPU_LOAD, (void *)&value, &size))
 		seq_printf(m, "GPU Load: %u %%\n", value);
+	seq_printf(m, "\n");
+
+	/* HBM Temp */
+	if (!amdgpu_dpm_read_sensor(adev, AMDGPU_PP_SENSOR_HBM_TEMP, (void *)&value, &size))
+		seq_printf(m, "HBM Temperature: %u C\n", value/1000);
 	seq_printf(m, "\n");
 
 	/* UVD clocks */
