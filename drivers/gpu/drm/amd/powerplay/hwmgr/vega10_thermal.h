@@ -51,6 +51,7 @@ struct vega10_temperature {
 
 
 extern int vega10_thermal_get_temperature(struct pp_hwmgr *hwmgr);
+extern int vega10_thermal_get_hbm_temperature(struct pp_hwmgr *hwmg);
 extern int vega10_thermal_stop_thermal_controller(struct pp_hwmgr *hwmgr);
 extern int vega10_fan_ctrl_get_fan_speed_info(struct pp_hwmgr *hwmgr,
 		struct phm_fan_speed_info *fan_speed_info);

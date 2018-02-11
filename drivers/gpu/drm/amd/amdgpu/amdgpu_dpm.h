@@ -360,6 +360,10 @@ enum amdgpu_pcie_gen {
 		((adev)->powerplay.pp_funcs->set_clockgating_by_smu(\
 			(adev)->powerplay.pp_handle, msg_id))
 
+#define amdgpu_dpm_odn_edit_dpm_table(adev, type, parameter, size) \
+	((adev)->powerplay.pp_funcs->odn_edit_dpm_table(\
+			(adev)->powerplay.pp_handle, type, parameter, size))
+
 struct amdgpu_dpm {
 	struct amdgpu_ps        *ps;
 	/* number of valid power states */

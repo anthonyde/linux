@@ -718,6 +718,29 @@ static int pp_dpm_get_temperature(void *handle)
 	return ret;
 }
 
+static int pp_dpm_get_hbm_temperature(void *handle)
+{
+	struct pp_hwmgr  *hwmgr;
+	struct pp_instance *pp_handle = (struct pp_instance *)handle;
+	int ret = 0;
+
+	ret = pp_check(pp_handle);
+
+	if (ret != 0)
+		return ret;
+
+	hwmgr = pp_handle->hwmgr;
+
+	if (hwmgr->hwmgr_func->get_hbm_temperature == NULL) {
+		pr_info("%s was not implemented.\n", __func__);
+		return 0;
+	}
+	mutex_lock(&pp_handle->pp_lock);
+	ret = hwmgr->hwmgr_func->get_hbm_temperature(hwmgr);
+	mutex_unlock(&pp_handle->pp_lock);
+	return ret;
+}
+
 static int pp_dpm_get_pp_num_states(void *handle,
 		struct pp_states_info *data)
 {
@@ -1146,8 +1169,27 @@ static int pp_dpm_switch_power_profile(void *handle,
 	return 0;
 }
 
+static int pp_odn_edit_dpm_table(void *handle, uint32_t type, long *input, uint32_t size)
+{
+	struct pp_hwmgr *hwmgr;
+	struct pp_instance *pp_handle = (struct pp_instance *)handle;
+
+	if (pp_check(pp_handle))
+		return -EINVAL;
+
+	hwmgr = pp_handle->hwmgr;
+
+	if (hwmgr->hwmgr_func->odn_edit_dpm_table == NULL) {
+		pr_info("%s was not implemented.\n", __func__);
+		return -EINVAL;
+	}
+
+	return hwmgr->hwmgr_func->odn_edit_dpm_table(hwmgr, type, input, size);
+}
+
 const struct amd_pm_funcs pp_dpm_funcs = {
 	.get_temperature = pp_dpm_get_temperature,
+	.get_hbm_temperature = pp_dpm_get_hbm_temperature,
 	.load_firmware = pp_dpm_load_fw,
 	.wait_for_fw_loading_complete = pp_dpm_fw_loading_complete,
 	.force_performance_level = pp_dpm_force_performance_level,
@@ -1179,6 +1221,7 @@ const struct amd_pm_funcs pp_dpm_funcs = {
 	.set_power_profile_state = pp_dpm_set_power_profile_state,
 	.switch_power_profile = pp_dpm_switch_power_profile,
 	.set_clockgating_by_smu = pp_set_clockgating_by_smu,
+	.odn_edit_dpm_table = pp_odn_edit_dpm_table,
 };
 
 int amd_powerplay_reset(void *handle)
@@ -1439,5 +1482,35 @@ int amd_powerplay_get_display_mode_validation_clocks(void *handle,
 
 	mutex_unlock(&pp_handle->pp_lock);
 	return ret;
+}
+
+int amd_powerplay_mutex_lock(void *handle)
+{
+	struct pp_instance *pp_handle = (struct pp_instance *)handle;
+	int ret = 0;
+
+	ret = pp_check(pp_handle);
+
+	if (ret != 0)
+		return ret;
+
+	mutex_lock(&pp_handle->pp_lock);
+
+	return 0;
+}
+
+int amd_powerplay_mutex_unlock(void *handle)
+{
+	struct pp_instance *pp_handle = (struct pp_instance *)handle;
+	int ret = 0;
+
+	ret = pp_check(pp_handle);
+
+	if (ret != 0)
+		return ret;
+
+	mutex_unlock(&pp_handle->pp_lock);
+
+	return 0;
 }
 

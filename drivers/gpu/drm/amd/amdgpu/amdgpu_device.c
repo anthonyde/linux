@@ -43,6 +43,7 @@
 #include "amdgpu_atombios.h"
 #include "amdgpu_atomfirmware.h"
 #include "amd_pcie.h"
+#include "amd_powerplay.h"
 #ifdef CONFIG_DRM_AMDGPU_SI
 #include "si.h"
 #endif
@@ -68,6 +69,8 @@ static int amdgpu_debugfs_regs_init(struct amdgpu_device *adev);
 static void amdgpu_debugfs_regs_cleanup(struct amdgpu_device *adev);
 static int amdgpu_debugfs_test_ib_ring_init(struct amdgpu_device *adev);
 static int amdgpu_debugfs_vbios_dump_init(struct amdgpu_device *adev);
+static int amdgpu_debugfs_powerplay_init(struct amdgpu_device *adev);
+static void amdgpu_debugfs_powerplay_cleanup(struct amdgpu_device *adev);
 
 static const char *amdgpu_asic_name[] = {
 	"TAHITI",
@@ -2363,6 +2366,10 @@ int amdgpu_device_init(struct amdgpu_device *adev,
 	if (r)
 		DRM_ERROR("Creating vbios dump debugfs failed (%d).\n", r);
 
+	r = amdgpu_debugfs_powerplay_init(adev);
+	if (r)
+		DRM_ERROR("registering powerplay debugfs failed (%d).\n", r);
+
 	if ((amdgpu_testing & 1)) {
 		if (adev->accel_working)
 			amdgpu_test_moves(adev);
@@ -2443,6 +2450,7 @@ void amdgpu_device_fini(struct amdgpu_device *adev)
 	amdgpu_doorbell_fini(adev);
 	amdgpu_pm_sysfs_fini(adev);
 	amdgpu_debugfs_regs_cleanup(adev);
+	amdgpu_debugfs_powerplay_cleanup(adev);
 }
 
 
@@ -3979,3 +3987,66 @@ static int amdgpu_debugfs_vbios_dump_init(struct amdgpu_device *adev)
 }
 static void amdgpu_debugfs_regs_cleanup(struct amdgpu_device *adev) { }
 #endif
+
+#if defined(CONFIG_DEBUG_FS)
+static int amdgpu_debugfs_pp_mutex_open(struct inode *i, struct file *f)
+{
+	struct amdgpu_device *adev = (struct amdgpu_device *) i->i_private;
+
+	if (amd_powerplay_mutex_lock(adev->powerplay.pp_handle))
+		return -EINVAL;
+
+	return nonseekable_open(i, f);
+}
+
+static int amdgpu_debugfs_pp_mutex_release(struct inode *i, struct file *f)
+{
+	struct amdgpu_device *adev = (struct amdgpu_device *) i->i_private;
+
+	if (amd_powerplay_mutex_unlock(adev->powerplay.pp_handle))
+		return -EINVAL;
+
+	return 0;
+}
+
+static ssize_t amdgpu_debugfs_pp_mutex_read(struct file *f, char __user *buf,
+					    size_t size, loff_t *pos)
+{
+	return 0;
+}
+
+static const struct file_operations amdgpu_debugfs_pp_mutex_fops = {
+	.owner = THIS_MODULE,
+	.open = amdgpu_debugfs_pp_mutex_open,
+	.release = amdgpu_debugfs_pp_mutex_release,
+	.read = amdgpu_debugfs_pp_mutex_read,
+	.llseek = default_llseek
+};
+#endif
+
+static int amdgpu_debugfs_powerplay_init(struct amdgpu_device *adev)
+{
+#if defined(CONFIG_DEBUG_FS)
+	struct drm_minor *minor = adev->ddev->primary;
+	struct dentry *ent, *root = minor->debugfs_root;
+
+	ent = debugfs_create_file("amdgpu_pp_mutex", S_IFREG | S_IRUGO, root,
+				  adev, &amdgpu_debugfs_pp_mutex_fops);
+
+	if (IS_ERR(ent))
+		return PTR_ERR(ent);
+
+	adev->debugfs_pp_mutex = ent;
+#endif
+	return 0;
+}
+
+static void amdgpu_debugfs_powerplay_cleanup(struct amdgpu_device *adev)
+{
+#if defined(CONFIG_DEBUG_FS)
+	if (adev->debugfs_pp_mutex) {
+		debugfs_remove(adev->debugfs_pp_mutex);
+		adev->debugfs_pp_mutex = NULL;
+	}
+#endif
+}
