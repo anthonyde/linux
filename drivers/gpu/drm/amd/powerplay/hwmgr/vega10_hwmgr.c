@@ -4029,6 +4029,10 @@ static int vega10_read_sensor(struct pp_hwmgr *hwmgr, int idx,
 		*((uint32_t *)value) = vega10_thermal_get_temperature(hwmgr);
 		*size = 4;
 		break;
+	case AMDGPU_PP_SENSOR_HBM_TEMP:
+		*((uint32_t *)value) = vega10_thermal_get_hbm_temperature(hwmgr);
+		*size = 4;
+		break;
 	case AMDGPU_PP_SENSOR_UVD_POWER:
 		*((uint32_t *)value) = data->uvd_power_gated ? 0 : 1;
 		*size = 4;
@@ -5115,6 +5119,7 @@ static const struct pp_hwmgr_func vega10_hwmgr_funcs = {
 			vega10_notify_smc_display_config_after_ps_adjustment,
 	.force_dpm_level = vega10_dpm_force_dpm_level,
 	.get_temperature = vega10_thermal_get_temperature,
+	.get_hbm_temperature = vega10_thermal_get_hbm_temperature,
 	.stop_thermal_controller = vega10_thermal_stop_thermal_controller,
 	.get_fan_speed_info = vega10_fan_ctrl_get_fan_speed_info,
 	.get_fan_speed_percent = vega10_fan_ctrl_get_fan_speed_percent,
